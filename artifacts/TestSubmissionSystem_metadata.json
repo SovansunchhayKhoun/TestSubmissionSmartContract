@@ -16,31 +16,6 @@
 					{
 						"indexed": true,
 						"internalType": "address",
-						"name": "presenter",
-						"type": "address"
-					},
-					{
-						"indexed": false,
-						"internalType": "bytes32",
-						"name": "presentationHash",
-						"type": "bytes32"
-					},
-					{
-						"indexed": false,
-						"internalType": "uint256",
-						"name": "presentedAt",
-						"type": "uint256"
-					}
-				],
-				"name": "CredentialPresented",
-				"type": "event"
-			},
-			{
-				"anonymous": false,
-				"inputs": [
-					{
-						"indexed": true,
-						"internalType": "address",
 						"name": "owner",
 						"type": "address"
 					},
@@ -70,7 +45,7 @@
 						"type": "string"
 					}
 				],
-				"name": "RoleAssign",
+				"name": "RoleAssigned",
 				"type": "event"
 			},
 			{
@@ -140,24 +115,24 @@
 				"inputs": [
 					{
 						"indexed": true,
-						"internalType": "address",
-						"name": "user",
-						"type": "address"
-					},
-					{
-						"indexed": false,
 						"internalType": "uint256",
-						"name": "grade",
+						"name": "testId",
 						"type": "uint256"
 					},
 					{
 						"indexed": false,
+						"internalType": "string",
+						"name": "title",
+						"type": "string"
+					},
+					{
+						"indexed": false,
 						"internalType": "uint256",
-						"name": "gradedTime",
+						"name": "maxScore",
 						"type": "uint256"
 					}
 				],
-				"name": "TestGraded",
+				"name": "TestCreated",
 				"type": "event"
 			},
 			{
@@ -171,14 +146,14 @@
 					},
 					{
 						"indexed": false,
-						"internalType": "string",
-						"name": "answersHash",
-						"type": "string"
+						"internalType": "uint256",
+						"name": "testId",
+						"type": "uint256"
 					},
 					{
 						"indexed": false,
 						"internalType": "uint256",
-						"name": "submissionTime",
+						"name": "grade",
 						"type": "uint256"
 					}
 				],
@@ -207,19 +182,6 @@
 				"inputs": [
 					{
 						"internalType": "string",
-						"name": "selectedDataHash",
-						"type": "string"
-					}
-				],
-				"name": "createCredentialPresentation",
-				"outputs": [],
-				"stateMutability": "nonpayable",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "string",
 						"name": "_identifier",
 						"type": "string"
 					}
@@ -232,57 +194,36 @@
 			{
 				"inputs": [
 					{
-						"internalType": "address",
-						"name": "user",
-						"type": "address"
+						"internalType": "string",
+						"name": "title",
+						"type": "string"
 					},
-					{
-						"internalType": "uint256",
-						"name": "index",
-						"type": "uint256"
-					}
-				],
-				"name": "getCredentialPresentation",
-				"outputs": [
 					{
 						"components": [
 							{
-								"internalType": "address",
-								"name": "issuer",
-								"type": "address"
-							},
-							{
 								"internalType": "string",
-								"name": "role",
+								"name": "text",
 								"type": "string"
 							},
 							{
-								"internalType": "uint256",
-								"name": "issueAt",
-								"type": "uint256"
+								"internalType": "string[4]",
+								"name": "answers",
+								"type": "string[4]"
 							},
 							{
-								"internalType": "bytes32",
-								"name": "hashes",
-								"type": "bytes32"
-							},
-							{
-								"internalType": "bytes32",
-								"name": "salaryHash",
-								"type": "bytes32"
-							},
-							{
-								"internalType": "bytes32",
-								"name": "salary300Hash",
-								"type": "bytes32"
+								"internalType": "uint8",
+								"name": "correctAnswerIndex",
+								"type": "uint8"
 							}
 						],
-						"internalType": "struct TestSubmissionSystem.Credential",
-						"name": "",
-						"type": "tuple"
+						"internalType": "struct TestSubmissionSystem.Question[]",
+						"name": "questions",
+						"type": "tuple[]"
 					}
 				],
-				"stateMutability": "view",
+				"name": "createTest",
+				"outputs": [],
+				"stateMutability": "nonpayable",
 				"type": "function"
 			},
 			{
@@ -352,24 +293,75 @@
 				"type": "function"
 			},
 			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "testId",
+						"type": "uint256"
+					}
+				],
+				"name": "getTestQuestions",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "string",
+								"name": "text",
+								"type": "string"
+							},
+							{
+								"internalType": "string[4]",
+								"name": "answers",
+								"type": "string[4]"
+							},
+							{
+								"internalType": "uint8",
+								"name": "correctAnswerIndex",
+								"type": "uint8"
+							}
+						],
+						"internalType": "struct TestSubmissionSystem.Question[]",
+						"name": "",
+						"type": "tuple[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
 				"inputs": [],
 				"name": "getTestSubmissions",
 				"outputs": [
 					{
 						"components": [
 							{
-								"internalType": "string",
-								"name": "answersHash",
-								"type": "string"
+								"internalType": "uint256",
+								"name": "testId",
+								"type": "uint256"
 							},
 							{
-								"internalType": "uint256",
-								"name": "submissionTime",
-								"type": "uint256"
+								"internalType": "uint8[]",
+								"name": "answers",
+								"type": "uint8[]"
+							},
+							{
+								"internalType": "bytes32",
+								"name": "answerHash",
+								"type": "bytes32"
 							},
 							{
 								"internalType": "uint256",
 								"name": "grade",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bytes32",
+								"name": "gradeHash",
+								"type": "bytes32"
+							},
+							{
+								"internalType": "uint256",
+								"name": "submissionTime",
 								"type": "uint256"
 							},
 							{
@@ -390,29 +382,6 @@
 				"inputs": [
 					{
 						"internalType": "address",
-						"name": "user",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "testIndex",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint256",
-						"name": "grade",
-						"type": "uint256"
-					}
-				],
-				"name": "gradeTest",
-				"outputs": [],
-				"stateMutability": "nonpayable",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
 						"name": "_user",
 						"type": "address"
 					},
@@ -420,16 +389,6 @@
 						"internalType": "string",
 						"name": "_role",
 						"type": "string"
-					},
-					{
-						"internalType": "bytes32",
-						"name": "_salaryHash",
-						"type": "bytes32"
-					},
-					{
-						"internalType": "bytes32",
-						"name": "_salary300Hash",
-						"type": "bytes32"
 					}
 				],
 				"name": "issueRole",
@@ -463,9 +422,14 @@
 			{
 				"inputs": [
 					{
-						"internalType": "string",
-						"name": "answersHash",
-						"type": "string"
+						"internalType": "uint256",
+						"name": "testId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint8[]",
+						"name": "answers",
+						"type": "uint8[]"
 					}
 				],
 				"name": "submitTest",
@@ -531,11 +495,11 @@
 	},
 	"sources": {
 		"TestSubmissionSystem.sol": {
-			"keccak256": "0x7928df4cdf82ef241eed052cdd5bd18c09aeef04af917b45ace0f5085b67034a",
+			"keccak256": "0xaf20557659f94aeafff90f422d095a6fa315261b95b2f2ef921ad54827b14151",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://1ed9434b09970de44fc4d51b0449031ade5d1d4cd7240834c79472ea2f0e968f",
-				"dweb:/ipfs/QmNxPw8S67CvBZFPurP9ANEV1gkiPW1ppFEWg7Lk3nMMmH"
+				"bzz-raw://1e76f1817f36ec9f6902abf4f34e7a1db9146bed1365d7945380cb936c019e86",
+				"dweb:/ipfs/QmUVfKeAVG6FgrVe28GJU9pCRQLtmvSsevusVNZiwY5EJB"
 			]
 		}
 	},
