@@ -12,38 +12,54 @@ contract TestSubmissionSystem {
         string name;
         string email;
         string profilePicture;
-        uint256 totalTestsSubmitted; // Track total tests submitted
-        uint256 lastTestScore; // Last test score
+        uint256 totalTestsSubmitted;
+        uint256 lastTestScore;
+    }
+
+    struct Question {
+        string text; // Question text
+        string[4] answers; // Four possible answers
+        uint8 correctAnswerIndex; // Index of the correct answer (0-3)
+    }
+
+    struct Test {
+        string title; // Test title
+        Question[] questions; // List of questions
+        uint256 maxScore; // Maximum score for the test
+        bool exists; // Check if the test exists
+        uint256 deadline; // Test submission deadline (timestamp)
     }
 
     struct TestSubmission {
-        string answersHash; // Hash of the submitted answers
-        uint256 submissionTime; // Time of submission
-        uint256 grade; // Grade awarded (0 if not graded yet)
-        bool graded; // Whether the test has been graded
+        uint256 testId;
+        uint8[] answers; // Submitted answers
+        uint256 grade; // Graded score
+        uint256 submissionTime;
+        bool graded; // If the test is graded
     }
-
     struct Credential {
         address issuer;
         string role;
         uint256 issueAt;
         bytes32 hashes;
-        bytes32 salaryHash;
-        bytes32 salary300Hash;
     }
 
+    // Mappings
     mapping(address => DID) private dids;
     mapping(address => string) private roles;
     mapping(address => string[]) private roleHistory;
     mapping(address => MetaData) private metadatas;
     mapping(address => Credential[]) private credentials;
     mapping(address => TestSubmission[]) private testSubmissions;
-
+    mapping(uint256 => Test) private tests; // Tests by their ID
+    uint256 private nextTestId; // Incremental test ID
+    
     constructor() {
         roles[msg.sender] = "super admin";
         roleHistory[msg.sender].push("super admin");
     }
 
+    // Events
     event DIDCreated(address indexed owner, string identifier);
     event SetMetaData(
         address indexed owner,
@@ -51,34 +67,60 @@ contract TestSubmissionSystem {
         string email,
         string profilePicture
     );
-    event RoleAssign(address indexed user, string role);
+    event RoleAssigned(address indexed user, string role);
     event RoleIssued(
         address indexed user,
         address receiver,
         string role,
         bytes32 hash
     );
-    event TestSubmitted(
-        address indexed user,
-        string answersHash,
-        uint256 submissionTime
-    );
-    event TestGraded(address indexed user, uint256 grade, uint256 gradedTime);
-    event CredentialPresented(
-        address indexed presenter,
-        bytes32 presentationHash,
-        uint256 presentedAt
-    );
+    event TestCreated(uint256 indexed testId, string title, uint256 maxScore, uint256 deadline);
+    event TestSubmitted(address indexed user, uint256 testId, uint256 grade);
+    event TestGraded(address indexed user, uint256 testId, uint256 grade);
 
-    function assignRole(address _user, string memory _role) public {
-        require(dids[msg.sender].owner != address(0), "Issuer must have a DID");
-        require(bytes(_role).length > 0, "Role cannot be empty");
-        roles[_user] = _role;
-        roleHistory[_user].push(_role);
-        emit RoleAssign(_user, _role);
+    // Modifiers
+    modifier onlySuperAdmin() {
+        require(
+            keccak256(abi.encodePacked(roles[msg.sender])) == keccak256("super admin"),
+            "Only super admin can perform this action"
+        );
+        _;
     }
 
-    function issueRole(address _user, string memory _role, bytes32 _salaryHash, bytes32 _salary300Hash) public {
+    modifier onlyAdmin() {
+        require(
+            keccak256(abi.encodePacked(roles[msg.sender])) == keccak256("admin"),
+            "Only admin can perform this action"
+        );
+        _;
+    }
+
+    modifier onlyStudent() {
+        require(
+            keccak256(abi.encodePacked(roles[msg.sender])) == keccak256("student"),
+            "Only student can perform this action"
+        );
+        _;
+    }
+
+    // Assign roles
+    function assignRole(address _user, string memory _role) public onlySuperAdmin {
+        require(dids[msg.sender].owner != address(0), "Issuer must have a DID");
+        require(bytes(_role).length > 0, "Role cannot be empty");
+
+        // Validate role names
+        require(
+            keccak256(abi.encodePacked(_role)) == keccak256("admin") ||
+                keccak256(abi.encodePacked(_role)) == keccak256("student"),
+            "Invalid role"
+        );
+
+        roles[_user] = _role;
+        roleHistory[_user].push(_role);
+        emit RoleAssigned(_user, _role);
+    }
+
+    function issueRole(address _user, string memory _role) public onlySuperAdmin {
         require(dids[msg.sender].owner != address(0), "Issuer must have a DID");
         require(bytes(_role).length > 0, "Role cannot be empty");
 
@@ -87,7 +129,7 @@ contract TestSubmissionSystem {
         );
 
         credentials[_user].push(
-            Credential(msg.sender, _role, block.timestamp, roleHash, _salaryHash, _salary300Hash)
+            Credential(msg.sender, _role, block.timestamp, roleHash)
         );
 
         roleHistory[_user].push(_role);
@@ -179,83 +221,71 @@ contract TestSubmissionSystem {
         return roleMatches && issuerMatches;
     }
 
-    function submitTest(string memory answersHash) public {
-        require(
-            dids[msg.sender].owner != address(0),
-            "No DID found for this address"
-        );
-        require(bytes(answersHash).length > 0, "Answers hash cannot be empty");
+    // Admin creates a test
+    function createTest(
+        string memory title,
+        Question[] memory questions,
+        uint256 deadline
+    ) public onlyAdmin {
+        require(bytes(title).length > 0, "Test title cannot be empty");
+        require(questions.length > 0, "Questions are required");
+        require(deadline > block.timestamp, "Deadline must be in the future");
+
+        uint256 maxScore = questions.length;
+
+        Test storage newTest = tests[nextTestId];
+        newTest.title = title;
+        newTest.exists = true;
+        newTest.maxScore = maxScore;
+        newTest.deadline = deadline;
+
+        for (uint256 i = 0; i < questions.length; i++) {
+            require(bytes(questions[i].text).length > 0, "Question text cannot be empty");
+            require(questions[i].correctAnswerIndex < 4, "Invalid correct answer index");
+            newTest.questions.push(questions[i]);
+        }
+
+        emit TestCreated(nextTestId, title, maxScore, deadline);
+        nextTestId++;
+    }
+
+    // Students submit test answers
+    function submitTest(uint256 testId, uint8[] memory answers) public onlyStudent {
+        require(tests[testId].exists, "Test does not exist");
+        require(block.timestamp <= tests[testId].deadline, "Test submission deadline has passed");
+        require(answers.length == tests[testId].questions.length, "Answers count mismatch");
+
+        uint256 grade = 0;
+        for (uint256 i = 0; i < answers.length; i++) {
+            if (answers[i] == tests[testId].questions[i].correctAnswerIndex) {
+                grade++;
+            }
+        }
 
         testSubmissions[msg.sender].push(
-            TestSubmission(answersHash, block.timestamp, 0, false)
+            TestSubmission(testId, answers, grade, block.timestamp, true)
         );
 
-        metadatas[msg.sender].totalTestsSubmitted += 1;
+        metadatas[msg.sender].totalTestsSubmitted++;
+        metadatas[msg.sender].lastTestScore = grade;
 
-        emit TestSubmitted(msg.sender, answersHash, block.timestamp);
+        emit TestSubmitted(msg.sender, testId, grade);
     }
 
-    function gradeTest(
-        address user,
-        uint256 testIndex,
-        uint256 grade
-    ) public {
-        require(dids[msg.sender].owner != address(0), "Issuer must have a DID");
-        require(testIndex < testSubmissions[user].length, "Invalid test index");
-        require(
-            !testSubmissions[user][testIndex].graded,
-            "Test already graded"
-        );
+    // Admin views test submissions
+    function gradeTest(address user, uint256 submissionIndex, uint256 grade) public onlyAdmin {
+        require(submissionIndex < testSubmissions[user].length, "Invalid submission index");
+        TestSubmission storage submission = testSubmissions[user][submissionIndex];
+        require(!submission.graded, "Test already graded");
 
-        testSubmissions[user][testIndex].grade = grade;
-        testSubmissions[user][testIndex].graded = true;
-        metadatas[user].lastTestScore = grade;
+        submission.grade = grade;
+        submission.graded = true;
 
-        emit TestGraded(user, grade, block.timestamp);
+        emit TestGraded(user, submission.testId, grade);
     }
 
-    function getTestSubmissions()
-        public
-        view
-        returns (TestSubmission[] memory)
-    {
-        require(
-            dids[msg.sender].owner != address(0),
-            "No DID found for this address"
-        );
+    // Students view their submissions
+    function getTestSubmissions() public view onlyStudent returns (TestSubmission[] memory) {
         return testSubmissions[msg.sender];
-    }
-
-    function createCredentialPresentation(string memory selectedDataHash)
-        public
-    {
-        require(
-            dids[msg.sender].owner != address(0),
-            "No DID found for this address"
-        );
-        require(
-            bytes(selectedDataHash).length > 0,
-            "Selected data hash cannot be empty"
-        );
-
-        bytes32 presentationHash = keccak256(
-            abi.encodePacked(msg.sender, selectedDataHash, block.timestamp)
-        );
-
-        emit CredentialPresented(msg.sender, presentationHash, block.timestamp);
-    }
-
-    function getCredentialPresentation(address user, uint256 index)
-        public
-        view
-        returns (Credential memory)
-    {
-        require(
-            dids[user].owner != address(0),
-            "No DID found for this address"
-        );
-        require(index < credentials[user].length, "Invalid credential index");
-
-        return credentials[user][index];
     }
 }
