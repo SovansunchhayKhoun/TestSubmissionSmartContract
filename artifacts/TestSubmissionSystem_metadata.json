@@ -107,7 +107,44 @@
 						"type": "string"
 					}
 				],
-				"name": "SetMetaData",
+				"name": "SetStudentMetaData",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "email",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "profilePicture",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "int256",
+						"name": "totalTestCreated",
+						"type": "int256"
+					}
+				],
+				"name": "SetTeacherMetaData",
 				"type": "event"
 			},
 			{
@@ -241,7 +278,20 @@
 			},
 			{
 				"inputs": [],
-				"name": "getMetadata",
+				"name": "getRole",
+				"outputs": [
+					{
+						"internalType": "string[]",
+						"name": "",
+						"type": "string[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getStudentMetadata",
 				"outputs": [
 					{
 						"components": [
@@ -271,7 +321,7 @@
 								"type": "uint256"
 							}
 						],
-						"internalType": "struct TestSubmissionSystem.MetaData",
+						"internalType": "struct TestSubmissionSystem.StudentMetaData",
 						"name": "",
 						"type": "tuple"
 					}
@@ -280,13 +330,91 @@
 				"type": "function"
 			},
 			{
-				"inputs": [],
-				"name": "getRole",
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_studentAddress",
+						"type": "address"
+					}
+				],
+				"name": "getStudentTestSubmission",
 				"outputs": [
 					{
-						"internalType": "string[]",
+						"components": [
+							{
+								"internalType": "uint256",
+								"name": "testId",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint8[]",
+								"name": "answers",
+								"type": "uint8[]"
+							},
+							{
+								"internalType": "bytes32",
+								"name": "answerHash",
+								"type": "bytes32"
+							},
+							{
+								"internalType": "uint256",
+								"name": "grade",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bytes32",
+								"name": "gradeHash",
+								"type": "bytes32"
+							},
+							{
+								"internalType": "uint256",
+								"name": "submissionTime",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bool",
+								"name": "graded",
+								"type": "bool"
+							}
+						],
+						"internalType": "struct TestSubmissionSystem.TestSubmission[]",
 						"name": "",
-						"type": "string[]"
+						"type": "tuple[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getTeacherMetadata",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "string",
+								"name": "name",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "email",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "profilePicture",
+								"type": "string"
+							},
+							{
+								"internalType": "int256",
+								"name": "totalTestCreated",
+								"type": "int256"
+							}
+						],
+						"internalType": "struct TestSubmissionSystem.TeacherMetaData",
+						"name": "",
+						"type": "tuple"
 					}
 				],
 				"stateMutability": "view",
@@ -414,7 +542,30 @@
 						"type": "string"
 					}
 				],
-				"name": "setMetadata",
+				"name": "setStudentMetadata",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "email",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "profilePicture",
+						"type": "string"
+					}
+				],
+				"name": "setTeacherMetadata",
 				"outputs": [],
 				"stateMutability": "nonpayable",
 				"type": "function"
@@ -495,11 +646,11 @@
 	},
 	"sources": {
 		"TestSubmissionSystem.sol": {
-			"keccak256": "0xaf20557659f94aeafff90f422d095a6fa315261b95b2f2ef921ad54827b14151",
+			"keccak256": "0x641d39648bfda85ce18cdb2ec6d3d2c81507e9cf0c7218a7b16269ce6aa2f914",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://1e76f1817f36ec9f6902abf4f34e7a1db9146bed1365d7945380cb936c019e86",
-				"dweb:/ipfs/QmUVfKeAVG6FgrVe28GJU9pCRQLtmvSsevusVNZiwY5EJB"
+				"bzz-raw://a6ff39b1de9e8b7136ef371430f10fa5b9e9ff995664e16c187d97a9c8b69f80",
+				"dweb:/ipfs/QmQvMn7HbtcR98AGfLQL3SqB6Zmubeij4z3oAxCs8N6cyw"
 			]
 		}
 	},

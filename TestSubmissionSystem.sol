@@ -139,12 +139,12 @@ contract TestSubmissionSystem {
                 keccak256("teacher") ||
                 keccak256(abi.encodePacked(roles[msg.sender])) ==
                 keccak256("government"),
-            "Only student can perform this action"
+            "Only admins can perform this action"
         );
         _;
     }
 
-    // Function to assign roles (admin or student)
+    // Function to assign roles (teacher or student)
     function assignRole(address _user, string memory _role)
         public
         onlyGovernment
@@ -436,5 +436,14 @@ contract TestSubmissionSystem {
         returns (TestSubmission[] memory)
     {
         return testSubmissions[msg.sender];
+    }
+
+    function getStudentTestSubmission(address _studentAddress)
+        public
+        view
+        onlyGovernmentOrTeacher
+        returns (TestSubmission[] memory)
+    {
+        return testSubmissions[_studentAddress];
     }
 }
