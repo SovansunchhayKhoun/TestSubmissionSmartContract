@@ -12,12 +12,20 @@ contract TestSubmissionSystem {
     }
 
     // Struct to store metadata about a user
-    struct MetaData {
+    struct StudentMetaData {
         string name; // User's name
         string email; // User's email address
         string profilePicture; // URL to the user's profile picture
         uint256 totalTestsSubmitted; // Total number of tests the user has submitted
         uint256 lastTestScore; // Last test score received by the user
+    }
+
+    // Struct to store metadata about a user
+    struct TeacherMetaData {
+        string name; // User's name
+        string email; // User's email address
+        string profilePicture; // URL to the user's profile picture
+        int256 totalTestCreated;
     }
 
     // Struct to define a question in a test
@@ -58,7 +66,8 @@ contract TestSubmissionSystem {
     mapping(address => DID) private dids; // Mapping to store DID for each address
     mapping(address => string) private roles; // Mapping to store role for each user
     mapping(address => string[]) private roleHistory; // Role history for each user
-    mapping(address => MetaData) private metadatas; // Metadata for each user
+    mapping(address => StudentMetaData) private studentMetadatas; // Metadata for each user
+    mapping(address => TeacherMetaData) private teacherMetadas; // Metadata for each user
     mapping(address => Credential[]) private credentials; // Credentials issued to each user
     mapping(address => TestSubmission[]) private testSubmissions; // Test submissions for each user
     mapping(uint256 => Test) private tests; // Mapping of test ID to Test struct
@@ -73,12 +82,19 @@ contract TestSubmissionSystem {
 
     // Events to log actions
     event DIDCreated(address indexed owner, string identifier); // When a DID is created
-    event SetMetaData(
+    event SetStudentMetaData(
         address indexed owner,
         string name,
         string email,
         string profilePicture
-    ); // When metadata is set
+    );
+    event SetTeacherMetaData(
+        address indexed owner,
+        string name,
+        string email,
+        string profilePicture,
+        int256 totalTestCreated
+    );
     event RoleAssigned(address indexed user, string role); // When a role is assigned
     event RoleIssued(
         address indexed user,
@@ -186,11 +202,11 @@ contract TestSubmissionSystem {
         return dids[msg.sender].identifier;
     }
 
-    function setMetadata(
+    function setTeacherMetadata(
         string memory name,
         string memory email,
         string memory profilePicture
-    ) public {
+    ) public onlyTeacher {
         require(
             dids[msg.sender].owner != address(0),
             "No DID found for this address"
@@ -202,14 +218,61 @@ contract TestSubmissionSystem {
             "Profile picture cannot be empty"
         );
 
-        metadatas[msg.sender] = MetaData(name, email, profilePicture, 0, 0);
+        teacherMetadas[msg.sender] = TeacherMetaData(
+            name,
+            email,
+            profilePicture,
+            0
+        );
 
-        emit SetMetaData(msg.sender, name, email, profilePicture);
+        emit SetTeacherMetaData(msg.sender, name, email, profilePicture, 0);
     }
 
-    function getMetadata() public view returns (MetaData memory) {
+    function setStudentMetadata(
+        string memory name,
+        string memory email,
+        string memory profilePicture
+    ) public onlyStudent {
+        require(
+            dids[msg.sender].owner != address(0),
+            "No DID found for this address"
+        );
+        require(bytes(name).length > 0, "Name cannot be empty");
+        require(bytes(email).length > 0, "Email cannot be empty");
+        require(
+            bytes(profilePicture).length > 0,
+            "Profile picture cannot be empty"
+        );
+
+        studentMetadatas[msg.sender] = StudentMetaData(
+            name,
+            email,
+            profilePicture,
+            0,
+            0
+        );
+
+        emit SetStudentMetaData(msg.sender, name, email, profilePicture);
+    }
+
+    function getStudentMetadata()
+        public
+        view
+        onlyStudent
+        returns (StudentMetaData memory)
+    {
         require(dids[msg.sender].owner != address(0), "Data does not exist");
-        return metadatas[msg.sender];
+        return studentMetadatas[msg.sender];
+    }
+
+    function getTeacherMetadata()
+        public
+        view
+        onlyTeacher
+        returns (TeacherMetaData memory)
+    {
+        require(dids[msg.sender].owner != address(0), "Data does not exist");
+        return teacherMetadas[msg.sender];
     }
 
     function getRole() public view returns (string[] memory) {
@@ -281,6 +344,8 @@ contract TestSubmissionSystem {
             );
             newTest.questions.push(questions[i]);
         }
+
+        teacherMetadas[msg.sender].totalTestCreated++; // Update teacher totalTestCreated metadata
 
         emit TestCreated(nextTestId, title, maxScore); // Emit TestCreated event
         nextTestId++; // Increment test ID for the next test
@@ -354,8 +419,8 @@ contract TestSubmissionSystem {
             })
         );
 
-        metadatas[msg.sender].totalTestsSubmitted++;
-        metadatas[msg.sender].lastTestScore = grade;
+        studentMetadatas[msg.sender].totalTestsSubmitted++;
+        studentMetadatas[msg.sender].lastTestScore = grade;
 
         // Mark test as taken
         hasTakenTest[msg.sender][testId] = true;
